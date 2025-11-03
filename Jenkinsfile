@@ -1,46 +1,38 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "express-pokemons-api"
-        IMAGE_TAG = "latest"
-        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials'
-        DOCKERHUB_USER = 'tu-usuario'
-    }
-
     stages {
+        
         stage('Checkout') {
             steps {
-                echo 'Clonando el repositorio...'
-                checkout scm
+                git 'https://github.com/jaftdelgado/express-pokemonapi-jenkins.git'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Construyendo la imagen Docker...'
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                echo "Construyendo la imagen Docker..."
+                bat 'docker build -t pokemon-api:latest .'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Desplegando el contenedor...'
-                sh '''
-                docker stop ${IMAGE_NAME} || true
-                docker rm ${IMAGE_NAME} || true
-                docker run -d -p 8080:3000 --name ${IMAGE_NAME} ${IMAGE_NAME}:${IMAGE_TAG}
+                echo "Desplegando la aplicación..."
+                bat  '''                 
+                    docker stop pokemon-app-container
+                    
+                    docker rm pokemon-app-container
+                
+                    docker run -d --name pokemon-app-container -p 8081:8081 pokemon-api:latest
                 '''
             }
         }
     }
 
     post {
-        success {
-            echo 'Pipeline completado exitosamente!'
-        }
-        failure {
-            echo 'Ocurrió un error. El pipeline falló.'
+        always {
+            echo "Pipeline terminado."
         }
     }
 }
